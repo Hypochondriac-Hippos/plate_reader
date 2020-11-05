@@ -5,10 +5,15 @@ Script to train the plate reader neural networks.
 """
 
 import argparse
+import json
+import os
 
 import numpy as np
 
 import onehot
+import video
+
+VIDEO_DIR = os.path.expanduser("~/Videos/353_recordings")
 
 
 def intify_keys(json_labels):
@@ -53,6 +58,26 @@ def label_plates(video, labels):
     pass
 
 
+def load_data(directory):
+    """
+    Read through a directory and open the labelled videos it contains.
+
+    Returns: sequences of opened videos and labels
+    """
+    output = []
+    for root, directories, files in os.walk(directory):
+        for file in files:
+            video_file = os.path.join(root, file)
+            label_file = os.path.join(root, file + ".json")
+            if os.path.exists(os.path.join(root, file + ".json")):
+                with open(label_file) as f:
+                    v = video.VideoCapture(video_file)
+                    if v.isOpened():
+                        output.append((v, json.load(f)))
+
+    return output
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -62,3 +87,5 @@ if __name__ == "__main__":
         "-r", "--read", action="store_true", help="train the plate reader network"
     )
     args = parser.parse_args()
+
+    videos, labels = load_data(VIDEO_DIR)
