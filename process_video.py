@@ -5,15 +5,17 @@ Process labelled videos into directories of images
 """
 
 import argparse
+import itertools
 import json
+import multiprocessing as mp
 import os
 import random
 import string
+import time
 
 import cv2
 import numpy as np
 
-import onehot
 import video
 
 VIDEO_DIR = os.path.expanduser("~/Videos/353_recordings")
@@ -90,7 +92,6 @@ def ensure_output_dirs():
 
 def dump_frames(problem, data, source_video):
     """Given an ndarray and the categorical labels, dump into appropriate output directory."""
-
     for f, l, n in data:
         imwrite(
             os.path.join(
@@ -115,6 +116,15 @@ def imwrite(filename, img, *args, **kwargs):
     return success
 
 
+def spinner(q, l, prefix):
+    spinner = itertools.cycle(r"-\|/")
+    while q.empty():
+        with l:
+            print(f"\r{prefix} {next(spinner)}", end="")
+        time.sleep(0.1)
+    print(f"\r{prefix}  ")
+
+
 if __name__ == "__main__":
     random.seed(1337)
 
@@ -135,7 +145,10 @@ if __name__ == "__main__":
         all_frames = []
         all_labels = []
         for vid, label, file in labelled_data:
+            done = mp.SimpleQueue()
+            spinner(done, mp.Lock(), os.path.basename(file))
             dump_frames("ids", label_ids(vid, label), os.path.basename(file))
+            done.put(True)
             vid.release()
 
         frames = np.asarray(all_frames).reshape((-1, all_frames[0][0].shape))
