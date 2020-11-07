@@ -7,6 +7,7 @@ Process labelled videos into directories of images
 import argparse
 import json
 import os
+import random
 import string
 
 import cv2
@@ -95,6 +96,10 @@ def dump_frames(problem, data, source_video):
             os.path.join(
                 OUT_DIR,
                 problem,
+                random.choices(
+                    ("train", "test"), weights=(TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT)
+                )[0],
+                str(l),
                 FILE_NAME_FORMAT.format(label=l, video=source_video, frame=n),
             ),
             f,
@@ -111,6 +116,8 @@ def imwrite(filename, img, *args, **kwargs):
 
 
 if __name__ == "__main__":
+    random.seed(1337)
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--id", action="store_true", help="train the plate identification network"
@@ -129,6 +136,7 @@ if __name__ == "__main__":
         all_labels = []
         for vid, label, file in labelled_data:
             dump_frames("ids", label_ids(vid, label), os.path.basename(file))
+            vid.release()
 
         frames = np.asarray(all_frames).reshape((-1, all_frames[0][0].shape))
         labels = np.asarray(all_labels).reshape((-1, all_labels[0][0].shape))
