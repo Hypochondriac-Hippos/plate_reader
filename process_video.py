@@ -9,6 +9,7 @@ import json
 import os
 import string
 
+import cv2
 import numpy as np
 
 import onehot
@@ -67,9 +68,8 @@ def load_data(directory):
     """
     Read through a directory and open the labelled videos it contains.
 
-    Returns: a sequence (in no particular order) of pairs of videos and labels
+    Yields a generator (in no particular order) of pairs of videos and labels
     """
-    output = []
     for root, directories, files in os.walk(directory):
         for file in files:
             video_file = os.path.join(root, file)
@@ -78,9 +78,7 @@ def load_data(directory):
                 with open(label_file) as f:
                     v = video.VideoCapture(video_file)
                     if v.isOpened():
-                        output.append((v, intify_keys(json.load(f))))
-
-    return output
+                        yield (v, intify_keys(json.load(f)))
 
 
 def ensure_output_dirs():
@@ -98,6 +96,25 @@ def ensure_output_dirs():
         for t in ("train", "test"):
             for c in classes:
                 os.makedirs(os.path.join(OUT_DIR, problem, t, c), exist_ok=True)
+
+
+def dump_frames(problem, frames, frame_numbers, labels, source_video):
+    """Given an ndarray and the categorical labels, dump into appropriate output directory."""
+
+    for f, l, n in zip(frames, labels, frame_numbers):
+        imwrite(
+            os.path.join(OUT_DIR, problem, FILE_NAME_FORMAT.format(l, source_video, n)),
+            f,
+        )
+
+
+def imwrite(filename, img, *args, **kwargs):
+    """Wrapper around cv2.imwrite that throws IOError if the write fails."""
+    success = cv2.imwrite(filename, img, *args, **kwargs)
+    if not success:
+        raise IOError("Couldn't write {}".format(filename))
+
+    return success
 
 
 if __name__ == "__main__":
