@@ -18,14 +18,7 @@ VIDEO_DIR = os.path.expanduser("~/Videos/353_recordings")
 OUT_DIR = os.path.join(VIDEO_DIR, "images")
 TRAIN_TEST_SPLIT = 0.8  # Percentage to put in training dataset
 FILE_NAME_FORMAT = "{class}_{video}_{frame}.png"
-ID_CLASSES = ("None", "1", "2", "3", "4", "5", "6", "7", "8")
-PLATE_CLASSES = [
-    "".join((a1, a2, d1, d2))
-    for a1 in string.ascii_uppercase
-    for a2 in string.ascii_uppercase
-    for d1 in string.digits
-    for d2 in string.digits
-]
+ID_CLASSES = ("0", "1", "2", "3", "4", "5", "6", "7", "8")
 
 
 def intify_keys(json_labels):
@@ -92,7 +85,16 @@ def load_data(directory):
 
 def ensure_output_dirs():
     """Set up the output directory structure, if required."""
-    for problem, classes in zip(("ids", "plates"), (ID_CLASSES, PLATE_CLASSES)):
+    for problem, classes in zip(
+        ("ids", "letter_1", "letter_2", "number_1", "number_2"),
+        (
+            ID_CLASSES,
+            string.ascii_uppercase,
+            string.ascii_uppercase,
+            string.digits,
+            string.digits,
+        ),
+    ):
         for t in ("train", "test"):
             for c in classes:
                 os.makedirs(os.path.join(OUT_DIR, problem, t, c), exist_ok=True)
