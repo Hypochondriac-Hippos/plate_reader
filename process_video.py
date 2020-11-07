@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
-Script to train the plate reader neural networks.
+Process labelled videos into directories of images
 """
 
 import argparse
@@ -36,18 +36,18 @@ def label_ids(video, labels):
     and a parallel ndarray of one-hot plate ID labels.
     """
     num_interesting = len(labels["frames"])
-    frames = np.empty((num_interesting, *video.shape))
-    labels = np.empty((num_interesting, 9))
+    frames = np.empty((num_interesting, *video.shape, 3), dtype=video[0].dtype)
+    frame_labels = np.empty((num_interesting, 9))
     j = 0
     for i, frame in enumerate(video):
         if i in labels["frames"]:
             frames[j] = frame
-            labels[j] = onehot.id(i)
+            frame_labels[j] = onehot.id(labels["frames"][i])
             j += 1
 
     assert j == num_interesting
 
-    return frames, labels
+    return frames, frame_labels
 
 
 def label_plates(video, labels):
@@ -62,7 +62,7 @@ def load_data(directory):
     """
     Read through a directory and open the labelled videos it contains.
 
-    Returns: sequences of opened videos and labels
+    Returns: a sequence (in no particular order) of pairs of videos and labels
     """
     output = []
     for root, directories, files in os.walk(directory):
@@ -73,7 +73,7 @@ def load_data(directory):
                 with open(label_file) as f:
                     v = video.VideoCapture(video_file)
                     if v.isOpened():
-                        output.append((v, json.load(f)))
+                        output.append((v, intify_keys(json.load(f))))
 
     return output
 
@@ -88,4 +88,15 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    videos, labels = load_data(VIDEO_DIR)
+    labelled_data = load_data(VIDEO_DIR)
+
+    if args.id:
+        all_frames = []
+        all_labels = []
+        for vid, label in labelled_data:
+            frames, labels = label_ids(vid, label)
+            all_frames.append(frames)
+            all_labels.append(labels)
+
+        frames = np.asarray(all_frames).reshape((-1, all_frames[0][0].shape))
+        labels = np.asarray(all_labels).reshape((-1, all_labels[0][0].shape))
