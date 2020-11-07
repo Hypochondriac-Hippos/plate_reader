@@ -18,7 +18,7 @@ import video
 VIDEO_DIR = os.path.expanduser("~/Videos/353_recordings")
 OUT_DIR = os.path.join(VIDEO_DIR, "images")
 TRAIN_TEST_SPLIT = 0.8  # Percentage to put in training dataset
-FILE_NAME_FORMAT = "{class}_{video}_{frame}.png"
+FILE_NAME_FORMAT = "{label}_{video}_{frame}.png"
 ID_CLASSES = ("0", "1", "2", "3", "4", "5", "6", "7", "8")
 
 
@@ -38,22 +38,11 @@ def intify_keys(json_labels):
 
 def label_ids(video, labels):
     """
-    Process a sequence of frames and a labels dict into an ndarray of interesting frames
-    and a parallel ndarray of one-hot plate ID labels.
+    Process a sequence of frames and a labels dict into an iterator of (frame, label, frame number)
     """
-    num_interesting = len(labels["frames"])
-    frames = np.empty((num_interesting, *video.shape, 3), dtype=video[0].dtype)
-    frame_labels = np.empty((num_interesting, 9))
-    j = 0
     for i, frame in enumerate(video):
         if i in labels["frames"]:
-            frames[j] = frame
-            frame_labels[j] = onehot.id(labels["frames"][i])
-            j += 1
-
-    assert j == num_interesting
-
-    return frames, frame_labels
+            yield frame, labels["frames"][i], i
 
 
 def label_plates(video, labels):
@@ -68,7 +57,7 @@ def load_data(directory):
     """
     Read through a directory and open the labelled videos it contains.
 
-    Yields a generator (in no particular order) of pairs of videos and labels
+    Yields a generator (in no particular order) of videos, labels, and filenames
     """
     for root, directories, files in os.walk(directory):
         for file in files:
@@ -78,7 +67,7 @@ def load_data(directory):
                 with open(label_file) as f:
                     v = video.VideoCapture(video_file)
                     if v.isOpened():
-                        yield (v, intify_keys(json.load(f)))
+                        yield v, intify_keys(json.load(f)), label_file
 
 
 def ensure_output_dirs():
@@ -98,12 +87,16 @@ def ensure_output_dirs():
                 os.makedirs(os.path.join(OUT_DIR, problem, t, c), exist_ok=True)
 
 
-def dump_frames(problem, frames, frame_numbers, labels, source_video):
+def dump_frames(problem, data, source_video):
     """Given an ndarray and the categorical labels, dump into appropriate output directory."""
 
-    for f, l, n in zip(frames, labels, frame_numbers):
+    for f, l, n in data:
         imwrite(
-            os.path.join(OUT_DIR, problem, FILE_NAME_FORMAT.format(l, source_video, n)),
+            os.path.join(
+                OUT_DIR,
+                problem,
+                FILE_NAME_FORMAT.format(label=l, video=source_video, frame=n),
+            ),
             f,
         )
 
@@ -134,10 +127,8 @@ if __name__ == "__main__":
     if args.id:
         all_frames = []
         all_labels = []
-        for vid, label in labelled_data:
-            frames, labels = label_ids(vid, label)
-            all_frames.append(frames)
-            all_labels.append(labels)
+        for vid, label, file in labelled_data:
+            dump_frames("ids", label_ids(vid, label), os.path.basename(file))
 
         frames = np.asarray(all_frames).reshape((-1, all_frames[0][0].shape))
         labels = np.asarray(all_labels).reshape((-1, all_labels[0][0].shape))
