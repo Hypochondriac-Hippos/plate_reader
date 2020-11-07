@@ -7,6 +7,7 @@ Process labelled videos into directories of images
 import argparse
 import json
 import os
+import string
 
 import numpy as np
 
@@ -14,6 +15,17 @@ import onehot
 import video
 
 VIDEO_DIR = os.path.expanduser("~/Videos/353_recordings")
+OUT_DIR = os.path.join(VIDEO_DIR, "images")
+TRAIN_TEST_SPLIT = 0.8  # Percentage to put in training dataset
+FILE_NAME_FORMAT = "{class}_{video}_{frame}.png"
+ID_CLASSES = ("None", "1", "2", "3", "4", "5", "6", "7", "8")
+PLATE_CLASSES = [
+    "".join((a1, a2, d1, d2))
+    for a1 in string.ascii_uppercase
+    for a2 in string.ascii_uppercase
+    for d1 in string.digits
+    for d2 in string.digits
+]
 
 
 def intify_keys(json_labels):
@@ -78,6 +90,14 @@ def load_data(directory):
     return output
 
 
+def ensure_output_dirs():
+    """Set up the output directory structure, if required."""
+    for problem, classes in zip(("ids", "plates"), (ID_CLASSES, PLATE_CLASSES)):
+        for t in ("train", "test"):
+            for c in classes:
+                os.makedirs(os.path.join(OUT_DIR, problem, t, c), exist_ok=True)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -87,6 +107,8 @@ if __name__ == "__main__":
         "-r", "--read", action="store_true", help="train the plate reader network"
     )
     args = parser.parse_args()
+
+    ensure_output_dirs()
 
     labelled_data = load_data(VIDEO_DIR)
 
