@@ -4,6 +4,7 @@
 Train license plate NNs
 """
 
+import argparse
 import os
 
 import keras
@@ -50,13 +51,18 @@ def visualize_dataset(dataset):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--visualize", action="store_true", help="Visualize datasets")
+    args = parser.parse_args()
+
     ensure_output_dirs()
 
     ids_train = load_id_dataset("training")
     ids_validation = load_id_dataset("validation")
 
-    visualize_dataset(ids_train)
-    visualize_dataset(ids_validation)
+    if args.visualize:
+        visualize_dataset(ids_train)
+        visualize_dataset(ids_validation)
 
     AUTOTUNE = tf.data.experimental.AUTOTUNE
     ids_train = ids_train.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
