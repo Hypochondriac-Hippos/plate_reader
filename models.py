@@ -5,13 +5,20 @@ Neural networks for plate identification (which plate is in frame?) and plate re
 (what is the number on the license plate in frame?).
 """
 
+from __future__ import division
+
 from keras import models, layers, optimizers
 
 
 class PlateID:
     def __init__(self, input_shape):
         self.model = models.Sequential()
-        self.model.add(layers.Conv2D(5, 5, activation="relu", input_shape=input_shape))
+        self.model.add(
+            layers.experimental.preprocessing.Rescaling(
+                1 / 255, input_shape=input_shape
+            )
+        )
+        self.model.add(layers.Conv2D(5, 5, activation="relu"))
         self.model.add(layers.MaxPooling2D())
         self.model.add(layers.Conv2D(8, 3, activation="relu"))
         self.model.add(layers.MaxPooling2D())
