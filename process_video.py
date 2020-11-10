@@ -9,6 +9,7 @@ import json
 import os
 import random
 import string
+import sys
 
 import cv2
 
@@ -70,15 +71,19 @@ if __name__ == "__main__":
     random.seed(1337)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-i", "--id", action="store_true", help="train the plate identification network"
-    )
-    parser.add_argument(
-        "-r", "--read", action="store_true", help="train the plate reader network"
-    )
+    parser.add_argument("file", help="Video to process")
     args = parser.parse_args()
 
     ensure_output_dirs()
+
+    label_file = args.file + ".json"
+    if not os.path.exists(args.file):
+        print(f"{args.file} does not exist.", file=sys.stderr)
+        sys.exit(1)
+
+    if not os.path.exists(label_file):
+        print(f"{args.file} does not have labels.", file=sys.stderr)
+        sys.exit(1)
 
     for file in sorted(os.listdir(VIDEO_DIR)):
         label_file = os.path.join(VIDEO_DIR, file + ".json")
