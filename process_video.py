@@ -85,33 +85,29 @@ if __name__ == "__main__":
         print(f"{args.file} does not have labels.", file=sys.stderr)
         sys.exit(1)
 
-    for file in sorted(os.listdir(VIDEO_DIR)):
-        label_file = os.path.join(VIDEO_DIR, file + ".json")
-        if os.path.exists(label_file):
-            with open(label_file) as f:
-                labels = json.load(f)
-            labels = intify_keys(labels)
-            with video.VideoCapture(os.path.join(VIDEO_DIR, file)) as v:
-                for i, frame in enumerate(v):
-                    print(
-                        f"\r{file} [{progress_bar(i, len(v), 20)}] {i}/{len(v)}", end=""
-                    )
-                    if i in labels["frames"]:
-                        label = labels["frames"][i]
-                        imwrite(
-                            os.path.join(
-                                OUT_DIR,
-                                "ids",
-                                random.choices(
-                                    ("train", "test"),
-                                    weights=(TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT),
-                                )[0],
-                                str(label),
-                                FILE_NAME_FORMAT.format(
-                                    label=label, video=file, frame=i
-                                ),
-                            ),
-                            frame,
-                        )
-                v.release()
-                print()
+    with open(label_file) as f:
+        labels = json.load(f)
+    labels = intify_keys(labels)
+    with video.VideoCapture(args.file) as v:
+        for i, frame in enumerate(v):
+            print(f"\r{args.file} [{progress_bar(i, len(v), 20)}] {i}/{len(v)}", end="")
+
+            if i in labels["frames"]:
+                label = labels["frames"][i]
+                imwrite(
+                    os.path.join(
+                        OUT_DIR,
+                        "ids",
+                        random.choices(
+                            ("train", "test"),
+                            weights=(TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT),
+                        )[0],
+                        str(label),
+                        FILE_NAME_FORMAT.format(
+                            label=label, video=os.path.basename(args.file), frame=i
+                        ),
+                    ),
+                    frame,
+                )
+
+        print()
