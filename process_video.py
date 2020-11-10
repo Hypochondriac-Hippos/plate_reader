@@ -5,16 +5,12 @@ Process labelled videos into directories of images
 """
 
 import argparse
-import itertools
 import json
-import multiprocessing as mp
 import os
 import random
 import string
-import time
 
 import cv2
-import numpy as np
 
 import video
 
@@ -39,40 +35,6 @@ def intify_keys(json_labels):
     }
 
 
-def label_ids(video, labels):
-    """
-    Process a sequence of frames and a labels dict into an iterator of (frame, label, frame number)
-    """
-    for i, frame in enumerate(video):
-        if i in labels["frames"]:
-            yield frame, labels["frames"][i], i
-
-
-def label_plates(video, labels):
-    """
-    Process a VideoCapture object and labels dict into an ndarray of frames and plate
-    number labels.
-    """
-    pass
-
-
-def load_data(directory):
-    """
-    Read through a directory and open the labelled videos it contains.
-
-    Yields a generator (in no particular order) of videos, labels, and filenames
-    """
-    for root, directories, files in os.walk(directory):
-        for file in files:
-            video_file = os.path.join(root, file)
-            label_file = os.path.join(root, file + ".json")
-            if os.path.exists(os.path.join(root, file + ".json")):
-                with open(label_file) as f:
-                    v = video.VideoCapture(video_file)
-                    if v.isOpened():
-                        yield v, intify_keys(json.load(f)), label_file
-
-
 def ensure_output_dirs():
     """Set up the output directory structure, if required."""
     for problem, classes in zip(
@@ -90,23 +52,6 @@ def ensure_output_dirs():
                 os.makedirs(os.path.join(OUT_DIR, problem, t, c), exist_ok=True)
 
 
-def dump_frames(problem, data, source_video):
-    """Given an ndarray and the categorical labels, dump into appropriate output directory."""
-    for f, l, n in data:
-        imwrite(
-            os.path.join(
-                OUT_DIR,
-                problem,
-                random.choices(
-                    ("train", "test"), weights=(TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT)
-                )[0],
-                str(l),
-                FILE_NAME_FORMAT.format(label=l, video=source_video, frame=n),
-            ),
-            f,
-        )
-
-
 def imwrite(filename, img, *args, **kwargs):
     """Wrapper around cv2.imwrite that throws IOError if the write fails."""
     success = cv2.imwrite(filename, img, *args, **kwargs)
@@ -116,13 +61,9 @@ def imwrite(filename, img, *args, **kwargs):
     return success
 
 
-def spinner(q, l, prefix):
-    spinner = itertools.cycle(r"-\|/")
-    while q.empty():
-        with l:
-            print(f"\r{prefix} {next(spinner)}", end="")
-        time.sleep(0.1)
-    print(f"\r{prefix}  ")
+def progress_bar(n, maximum, width):
+    prog = round(n / maximum * width)
+    return "#" * prog + "-" * (width - prog)
 
 
 if __name__ == "__main__":
@@ -139,17 +80,33 @@ if __name__ == "__main__":
 
     ensure_output_dirs()
 
-    labelled_data = load_data(VIDEO_DIR)
-
-    if args.id:
-        all_frames = []
-        all_labels = []
-        for vid, label, file in labelled_data:
-            done = mp.SimpleQueue()
-            spinner(done, mp.Lock(), os.path.basename(file))
-            dump_frames("ids", label_ids(vid, label), os.path.basename(file))
-            done.put(True)
-            vid.release()
-
-        frames = np.asarray(all_frames).reshape((-1, all_frames[0][0].shape))
-        labels = np.asarray(all_labels).reshape((-1, all_labels[0][0].shape))
+    for file in sorted(os.listdir(VIDEO_DIR)):
+        label_file = os.path.join(VIDEO_DIR, file + ".json")
+        if os.path.exists(label_file):
+            with open(label_file) as f:
+                labels = json.load(f)
+            labels = intify_keys(labels)
+            with video.VideoCapture(os.path.join(VIDEO_DIR, file)) as v:
+                for i, frame in enumerate(v):
+                    print(
+                        f"\r{file} [{progress_bar(i, len(v), 20)}] {i}/{len(v)}", end=""
+                    )
+                    if i in labels["frames"]:
+                        label = labels["frames"][i]
+                        imwrite(
+                            os.path.join(
+                                OUT_DIR,
+                                "ids",
+                                random.choices(
+                                    ("train", "test"),
+                                    weights=(TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT),
+                                )[0],
+                                str(label),
+                                FILE_NAME_FORMAT.format(
+                                    label=label, video=file, frame=i
+                                ),
+                            ),
+                            frame,
+                        )
+                v.release()
+                print()
