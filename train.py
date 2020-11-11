@@ -10,7 +10,6 @@ import os
 import keras
 import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
 
 import models
 import util
@@ -63,10 +62,6 @@ if __name__ == "__main__":
     if args.visualize:
         visualize_dataset(ids_train)
         visualize_dataset(ids_validation)
-
-    AUTOTUNE = tf.data.experimental.AUTOTUNE
-    ids_train = ids_train.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
-    ids_validation = ids_validation.cache().prefetch(buffer_size=AUTOTUNE)
 
     ids = models.id_model(util.image_shape)
     ids.summary()
