@@ -10,28 +10,27 @@ from __future__ import division
 from keras import models, layers, optimizers
 
 
-class PlateID:
-    def __init__(self, input_shape):
-        self.model = models.Sequential()
-        self.model.add(
-            layers.experimental.preprocessing.Rescaling(
-                1 / 255, input_shape=input_shape
-            )
-        )
-        self.model.add(layers.Conv2D(5, 5, activation="relu"))
-        self.model.add(layers.MaxPooling2D())
-        self.model.add(layers.Conv2D(8, 3, activation="relu"))
-        self.model.add(layers.MaxPooling2D())
-        self.model.add(layers.Flatten())
-        self.model.add(layers.Dropout(0.5))
-        self.model.add(layers.Dense(81, activation="relu"))
-        self.model.add(layers.Dense(27, activation="relu"))
-        self.model.add(layers.Dense(9, activation="softmax"))
-        self.model.compile(
-            loss="categorical_crossentropy",
-            optimizer=optimizers.RMSprop(),
-            metrics=["acc"],
-        )
+def id_model(input_shape):
+    """Set up the plate ID NN"""
+    model = models.Sequential()
+    model.add(
+        layers.experimental.preprocessing.Rescaling(1 / 255, input_shape=input_shape)
+    )
+    model.add(layers.Conv2D(5, 5, activation="relu"))
+    model.add(layers.MaxPooling2D())
+    model.add(layers.Conv2D(8, 3, activation="relu"))
+    model.add(layers.MaxPooling2D())
+    model.add(layers.Flatten())
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(81, activation="relu"))
+    model.add(layers.Dense(27, activation="relu"))
+    model.add(layers.Dense(9, activation="softmax"))
+    model.compile(
+        loss="categorical_crossentropy",
+        optimizer=optimizers.RMSprop(),
+        metrics=["acc"],
+    )
+    return model
 
 
 class PlateReader:

@@ -68,6 +68,6 @@ if __name__ == "__main__":
     ids_train = ids_train.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
     ids_validation = ids_validation.cache().prefetch(buffer_size=AUTOTUNE)
 
-    ids = models.PlateID(util.image_shape)
-    ids.model.summary()
-    ids.model.fit(ids_train, validation_data=ids_validation, epochs=5)
+    ids = models.id_model(util.image_shape)
+    ids.summary()
+    ids.fit(ids_train, validation_data=ids_validation, epochs=5)
