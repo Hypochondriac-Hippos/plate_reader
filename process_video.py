@@ -18,8 +18,15 @@ import video
 VIDEO_DIR = os.path.expanduser("~/Videos/353_recordings")
 OUT_DIR = os.path.join(VIDEO_DIR, "images")
 TRAIN_TEST_SPLIT = 0.8  # Percentage to put in training dataset
-FILE_NAME_FORMAT = "{label}_{video}_{frame}.png"
+FILE_NAME_FORMAT = "{label}_{video}_{frame:04}.png"
 ID_CLASSES = ("0", "1", "2", "3", "4", "5", "6", "7", "8")
+PLATE_PROBLEMS = ("letter_1", "letter_2", "number_1", "number_2")
+PLATE_CLASSES = (
+    string.ascii_uppercase,
+    string.ascii_uppercase,
+    string.digits,
+    string.digits,
+)
 
 
 def intify_keys(json_labels):
@@ -39,14 +46,8 @@ def intify_keys(json_labels):
 def ensure_output_dirs():
     """Set up the output directory structure, if required."""
     for problem, classes in zip(
-        ("ids", "letter_1", "letter_2", "number_1", "number_2"),
-        (
-            ID_CLASSES,
-            string.ascii_uppercase,
-            string.ascii_uppercase,
-            string.digits,
-            string.digits,
-        ),
+        ("ids", *PLATE_PROBLEMS),
+        (ID_CLASSES, *PLATE_CLASSES),
     ):
         for t in ("train", "test"):
             for c in classes:
@@ -60,6 +61,13 @@ def imwrite(filename, img, *args, **kwargs):
         raise IOError("Couldn't write {}".format(filename))
 
     return success
+
+
+def train_or_test():
+    return random.choices(
+        ("train", "test"),
+        weights=(TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT),
+    )[0]
 
 
 def progress_bar(n, maximum, width):
@@ -93,21 +101,36 @@ if __name__ == "__main__":
             print(f"\r{args.file} [{progress_bar(i, len(v), 20)}] {i}/{len(v)}", end="")
 
             if i in labels["frames"]:
-                label = labels["frames"][i]
+                id_label = labels["frames"][i]
                 imwrite(
                     os.path.join(
                         OUT_DIR,
                         "ids",
-                        random.choices(
-                            ("train", "test"),
-                            weights=(TRAIN_TEST_SPLIT, 1 - TRAIN_TEST_SPLIT),
-                        )[0],
-                        str(label),
+                        train_or_test(),
+                        str(id_label),
                         FILE_NAME_FORMAT.format(
-                            label=label, video=os.path.basename(args.file), frame=i
+                            label=id_label, video=os.path.basename(args.file), frame=i
                         ),
                     ),
                     frame,
                 )
+
+                if id_label in labels["plates"]:
+                    plate = labels["plates"][id_label]
+                    for char, place in zip(plate, PLATE_PROBLEMS):
+                        imwrite(
+                            os.path.join(
+                                OUT_DIR,
+                                place,
+                                train_or_test(),
+                                char,
+                                FILE_NAME_FORMAT.format(
+                                    label=char,
+                                    video=os.path.basename(args.file),
+                                    frame=i,
+                                ),
+                            ),
+                            frame,
+                        )
 
         print()
