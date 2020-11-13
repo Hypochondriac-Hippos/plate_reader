@@ -19,6 +19,7 @@ VIDEO_DIR = os.path.expanduser("~/Videos/353_recordings")
 OUT_DIR = os.path.join(VIDEO_DIR, "images")
 TRAIN_TEST_SPLIT = 0.8  # Percentage to put in training dataset
 FILE_NAME_FORMAT = "{label}_{video}_{frame:04}.png"
+FILE_NAME_IMG = "{video}_{frame:04}.png"
 ID_CLASSES = ("0", "1", "2", "3", "4", "5", "6", "7", "8")
 PLATE_PROBLEMS = ("letter_1", "letter_2", "number_1", "number_2")
 PLATE_CLASSES = (
@@ -45,6 +46,7 @@ def intify_keys(json_labels):
 
 def ensure_output_dirs():
     """Set up the output directory structure, if required."""
+    os.makedirs(os.path.join(OUT_DIR, "source"), exist_ok=True)
     for problem, classes in zip(
         ("ids", *PLATE_PROBLEMS),
         (ID_CLASSES, *PLATE_CLASSES),
@@ -102,7 +104,16 @@ if __name__ == "__main__":
 
             if i in labels["frames"]:
                 id_label = labels["frames"][i]
+                destination = os.path.join(
+                    "source",
+                    FILE_NAME_IMG.format(video=os.path.basename(args.file), frame=i),
+                )
                 imwrite(
+                    os.path.join(OUT_DIR, destination),
+                    frame,
+                )
+                os.symlink(
+                    os.path.join("../../../", destination),
                     os.path.join(
                         OUT_DIR,
                         "ids",
@@ -112,13 +123,13 @@ if __name__ == "__main__":
                             label=id_label, video=os.path.basename(args.file), frame=i
                         ),
                     ),
-                    frame,
                 )
 
                 if id_label in labels["plates"]:
                     plate = labels["plates"][id_label]
                     for char, place in zip(plate, PLATE_PROBLEMS):
-                        imwrite(
+                        os.symlink(
+                            os.path.join("../../../", destination),
                             os.path.join(
                                 OUT_DIR,
                                 place,
@@ -130,7 +141,6 @@ if __name__ == "__main__":
                                     frame=i,
                                 ),
                             ),
-                            frame,
                         )
 
         print()
