@@ -38,7 +38,7 @@ def load_id_dataset(root, sample_percent):
         (num_files, util.image_shape[0], util.image_shape[1], util.image_shape[2]),
         dtype=np.uint8,
     )
-    labels = tf.one_hot(labels, 9)
+    labels = np.asarray(tf.one_hot(labels, 9))
 
     for i, file in enumerate(files):
         frames[i] = util.imread(file)
