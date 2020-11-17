@@ -5,6 +5,7 @@ Train license plate NNs
 """
 
 import argparse
+import datetime
 import itertools as it
 import os
 
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     ensure_output_dirs()
 
     ids_frames, ids_labels = loader.load_id_dataset(
-        os.path.join(IMAGE_DIR, "ids", "train"), 0.01
+        os.path.join(IMAGE_DIR, "ids", "train"), 0.09
     )
 
     if args.visualize:
@@ -53,4 +54,23 @@ if __name__ == "__main__":
 
     ids = models.id_model(util.image_shape)
     ids.summary()
-    ids.fit(ids_frames, ids_labels, validation_split=0.2, epochs=5)
+    history = ids.fit(ids_frames, ids_labels, validation_split=0.2, epochs=10)
+
+    fig, ax = plt.subplots(ncols=2)
+    ax[0].plot(history.history["loss"])
+    ax[0].plot(history.history["val_loss"])
+    ax[0].set_title("model loss")
+    ax[0].set_ylabel("loss")
+    ax[0].set_xlabel("epoch")
+    ax[0].legend(["train loss", "val loss"], loc="upper left")
+
+    ax[1].plot(history.history["acc"])
+    ax[1].plot(history.history["val_acc"])
+    ax[1].set_title("model accuracy")
+    ax[1].set_ylabel("accuracy (%)")
+    ax[1].set_xlabel("epoch")
+    ax[1].legend(["train accuracy", "val accuracy"], loc="upper left")
+    plt.show()
+
+    now = datetime.datetime.utcnow().replace(second=0, microsecond=0)
+    ids.save("trained/ids_{}".format(now.isoformat()))
