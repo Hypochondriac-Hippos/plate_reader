@@ -5,7 +5,7 @@ Neural networks for plate identification (which plate is in frame?) and plate re
 (what is the number on the license plate in frame?).
 """
 
-from keras import models, layers, optimizers
+from tensorflow.keras import models, layers, optimizers
 
 
 def id_model(input_shape):
