@@ -23,22 +23,22 @@ def list_all_files(root):
     return files
 
 
-def load_id_dataset(root, sample_percent):
+def load_dataset(root, classes, sample_percent):
     """Return an ndarray of frames and a matching ndarray of one-hot labels."""
     files = []
     labels = []
-    for n in range(9):
-        all_files = list_all_files(os.path.join(root, str(n)))
-        sample = random.sample(all_files, int(sample_percent * len(all_files)))
+    for i, c in enumerate(classes):
+        all_files = list_all_files(os.path.join(root, c))
+        sample = random.sample(all_files, int(np.ceil(sample_percent * len(all_files))))
         files.extend(sample)
-        labels.extend([n] * len(sample))
+        labels.extend([i] * len(sample))
 
     num_files = len(files)
     frames = np.empty(
         (num_files, util.image_shape[0], util.image_shape[1], util.image_shape[2]),
         dtype=np.uint8,
     )
-    labels = np.asarray(tf.one_hot(labels, 9))
+    labels = np.asarray(tf.one_hot(labels, len(classes)))
 
     for i, file in enumerate(files):
         frames[i] = util.imread(file)

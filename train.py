@@ -45,8 +45,8 @@ if __name__ == "__main__":
 
     ensure_output_dirs()
 
-    ids_frames, ids_labels = loader.load_id_dataset(
-        os.path.join(IMAGE_DIR, "ids", "train"), 0.09
+    ids_frames, ids_labels = loader.load_dataset(
+        os.path.join(IMAGE_DIR, "ids", "train"), util.ID_CLASSES, 0.09
     )
 
     if args.visualize:
