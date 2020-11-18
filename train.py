@@ -45,6 +45,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n", "--numbers", action="store_true", help="Train plate numbers"
     )
+    parser.add_argument(
+        "-p", "--percent", type=float, default=1, help="Percentage of dataset to use"
+    )
     args = parser.parse_args()
 
     ensure_output_dirs()
@@ -53,7 +56,7 @@ if __name__ == "__main__":
         ids_frames, ids_labels = loader.load_dataset(
             os.path.join(IMAGE_DIR, "ids", "train"),
             util.ID_CLASSES,
-            0.03,
+            args.percent,
             preprocessor=util.greyscale,
         )
 
@@ -86,7 +89,7 @@ if __name__ == "__main__":
     if args.numbers:
         for problem, classes in zip(util.PLATE_PROBLEMS, util.PLATE_CLASSES):
             frames, labels = loader.load_dataset(
-                os.path.join(IMAGE_DIR, problem, "train"), classes, 0.09
+                os.path.join(IMAGE_DIR, problem, "train"), classes, args.percent
             )
 
             if args.visualize:
