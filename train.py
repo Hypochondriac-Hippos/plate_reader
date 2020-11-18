@@ -42,6 +42,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--visualize", action="store_true", help="Visualize datasets")
     parser.add_argument("-i", "--ids", action="store_true", help="Train plate ID")
+    parser.add_argument(
+        "-n", "--numbers", action="store_true", help="Train plate numbers"
+    )
     args = parser.parse_args()
 
     ensure_output_dirs()
@@ -54,7 +57,7 @@ if __name__ == "__main__":
         if args.visualize:
             visualize_dataset(ids_frames, ids_labels)
 
-        ids = models.id_model(util.image_shape)
+        ids = models.id_model(util.image_shape, len(util.ID_CLASSES))
         ids.summary()
         history = ids.fit(ids_frames, ids_labels, validation_split=0.2, epochs=10)
 
@@ -76,3 +79,35 @@ if __name__ == "__main__":
 
         now = datetime.datetime.utcnow().replace(second=0, microsecond=0)
         ids.save("trained/ids_{}".format(now.isoformat()))
+
+    if args.numbers:
+        for problem, classes in zip(util.PLATE_PROBLEMS, util.PLATE_CLASSES):
+            frames, labels = loader.load_dataset(
+                os.path.join(IMAGE_DIR, problem, "train"), classes, 0.09
+            )
+
+            if args.visualize:
+                visualize_dataset(frames, labels)
+
+            reader = models.id_model(util.image_shape, len(classes))
+            reader.summary()
+            history = reader.fit(frames, labels, validation_split=0.2, epochs=10)
+
+            fig, ax = plt.subplots(ncols=2)
+            ax[0].plot(history.history["loss"])
+            ax[0].plot(history.history["val_loss"])
+            ax[0].set_title("model loss")
+            ax[0].set_ylabel("loss")
+            ax[0].set_xlabel("epoch")
+            ax[0].legend(["train loss", "val loss"], loc="upper left")
+
+            ax[1].plot(history.history["acc"])
+            ax[1].plot(history.history["val_acc"])
+            ax[1].set_title("model accuracy")
+            ax[1].set_ylabel("accuracy (%)")
+            ax[1].set_xlabel("epoch")
+            ax[1].legend(["train accuracy", "val accuracy"], loc="upper left")
+            plt.show()
+
+            now = datetime.datetime.utcnow().replace(second=0, microsecond=0)
+            reader.save("trained/{}_{}".format(problem, now.isoformat()))

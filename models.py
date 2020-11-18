@@ -8,7 +8,7 @@ Neural networks for plate identification (which plate is in frame?) and plate re
 from tensorflow.keras import models, layers, optimizers
 
 
-def id_model(input_shape):
+def id_model(input_shape, num_classes):
     """Set up the plate ID NN"""
     model = models.Sequential()
     model.add(layers.Conv2D(5, 5, activation="relu", input_shape=input_shape))
@@ -16,14 +16,10 @@ def id_model(input_shape):
     model.add(layers.Flatten())
     model.add(layers.Dropout(0.5))
     model.add(layers.Dense(27, activation="relu"))
-    model.add(layers.Dense(9, activation="softmax"))
+    model.add(layers.Dense(num_classes, activation="softmax"))
     model.compile(
         loss="categorical_crossentropy",
         optimizer=optimizers.RMSprop(),
         metrics=["acc"],
     )
     return model
-
-
-class PlateReader:
-    pass
