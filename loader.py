@@ -23,7 +23,7 @@ def list_all_files(root):
     return files
 
 
-def load_dataset(root, classes, sample_percent):
+def load_dataset(root, classes, sample_percent, preprocessor=lambda i: i):
     """Return an ndarray of frames and a matching ndarray of one-hot labels."""
     files = []
     labels = []
@@ -33,14 +33,10 @@ def load_dataset(root, classes, sample_percent):
         files.extend(sample)
         labels.extend([i] * len(sample))
 
-    num_files = len(files)
-    frames = np.empty(
-        (num_files, util.image_shape[0], util.image_shape[1], util.image_shape[2]),
-        dtype=np.uint8,
-    )
+    frames = []
     labels = np.asarray(tf.one_hot(labels, len(classes)))
 
     for i, file in enumerate(files):
-        frames[i] = util.imread(file)
+        frames.append(preprocessor(util.imread(file)))
 
-    return frames, labels
+    return np.asarray(frames), labels

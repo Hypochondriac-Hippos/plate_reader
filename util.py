@@ -21,6 +21,12 @@ PLATE_CLASSES = (
 )
 
 
+def greyscale(image):
+    shape = list(image.shape)
+    shape[-1] = 1
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(shape)
+
+
 def imread(filename, flags=cv2.IMREAD_COLOR):
     """Wrapper around cv2.imread that throws IOError if the read fails."""
     image = cv2.imread(filename, flags)

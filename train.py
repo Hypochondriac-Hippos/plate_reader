@@ -51,15 +51,18 @@ if __name__ == "__main__":
 
     if args.ids:
         ids_frames, ids_labels = loader.load_dataset(
-            os.path.join(IMAGE_DIR, "ids", "train"), util.ID_CLASSES, 0.09
+            os.path.join(IMAGE_DIR, "ids", "train"),
+            util.ID_CLASSES,
+            0.03,
+            preprocessor=util.greyscale,
         )
 
         if args.visualize:
             visualize_dataset(ids_frames, ids_labels)
 
-        ids = models.id_model(util.image_shape, len(util.ID_CLASSES))
+        ids = models.id_model(ids_frames[0].shape, len(util.ID_CLASSES))
         ids.summary()
-        history = ids.fit(ids_frames, ids_labels, validation_split=0.2, epochs=10)
+        history = ids.fit(ids_frames, ids_labels, validation_split=0.2, epochs=5)
 
         fig, ax = plt.subplots(ncols=2)
         ax[0].plot(history.history["loss"])
@@ -91,7 +94,7 @@ if __name__ == "__main__":
 
             reader = models.id_model(util.image_shape, len(classes))
             reader.summary()
-            history = reader.fit(frames, labels, validation_split=0.2, epochs=10)
+            history = reader.fit(frames, labels, validation_split=0.2, epochs=5)
 
             fig, ax = plt.subplots(ncols=2)
             ax[0].plot(history.history["loss"])

@@ -21,7 +21,10 @@ if __name__ == "__main__":
 
     if args.ids:
         ids_frames, ids_labels = loader.load_dataset(
-            os.path.join(IMAGE_DIR, "ids", "test"), util.ID_CLASSES, 0.1
+            os.path.join(IMAGE_DIR, "ids", "test"),
+            util.ID_CLASSES,
+            0.1,
+            preprocessor=util.greyscale,
         )
 
         model = tf.keras.models.load_model(args.ids)
