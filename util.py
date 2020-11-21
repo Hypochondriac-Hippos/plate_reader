@@ -5,26 +5,11 @@ Miscellaneous utilities and data cutting across several files
 """
 
 import os
-import string
 import sys
 
 import cv2
 
 image_shape = (720, 1280, 3)
-ID_CLASSES = ("0", "1", "2", "3", "4", "5", "6", "7", "8")
-PLATE_PROBLEMS = ("letter_1", "letter_2", "number_1", "number_2")
-PLATE_CLASSES = (
-    string.ascii_uppercase,
-    string.ascii_uppercase,
-    string.digits,
-    string.digits,
-)
-
-
-def greyscale(image):
-    shape = list(image.shape)
-    shape[-1] = 1
-    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(shape)
 
 
 def imread(filename, flags=cv2.IMREAD_COLOR):
